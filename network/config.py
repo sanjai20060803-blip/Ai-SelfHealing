@@ -42,7 +42,10 @@ class Settings(BaseSettings):
     # Mail / Notification settings
     notify_enabled: bool = True
     mail_password: str = secrets_props.get("MAIL_PASSWORD", "")
-    # The receiving account is also used as the SMTP sender and login account.
+    mail_username: str = secrets_props.get(
+        "MAIL_USERNAME", secrets_props.get("NOTIFY_TO", "")
+    )
+    mail_from_name: str = "Self-Healing Network alert"
     notify_to: str = secrets_props.get(
         "NOTIFY_TO", secrets_props.get("MAIL_USERNAME", "")
     )
@@ -71,7 +74,8 @@ RECOVERY_REAL_COMMANDS = settings.recovery_real_commands
 HEALING_COOLDOWN_MS = settings.healing_cooldown_ms
 NOTIFY_ENABLED = settings.notify_enabled
 MAIL_PASSWORD = settings.mail_password
-# Destination address for self-healing notifications.
+MAIL_USERNAME = settings.mail_username
+MAIL_FROM_NAME = settings.mail_from_name
 NOTIFY_TO = settings.notify_to
 NOTIFY_MIN_GAP_MS = settings.notify_min_gap_ms
 SMTP_HOST = settings.smtp_host

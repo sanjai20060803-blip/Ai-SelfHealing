@@ -2,9 +2,12 @@ import smtplib
 import threading
 import time
 from email.mime.text import MIMEText
+from email.utils import formataddr
 from config import (
     NOTIFY_ENABLED,
     MAIL_PASSWORD,
+    MAIL_USERNAME,
+    MAIL_FROM_NAME,
     NOTIFY_TO,
     NOTIFY_MIN_GAP_MS,
     SMTP_HOST,
@@ -18,9 +21,15 @@ class EmailService:
         self.enabled = NOTIFY_ENABLED
         self.to_addr = NOTIFY_TO
         self.from_addr = next(
-            (addr.strip() for addr in self.to_addr.split(",") if addr.strip()),
+            (addr.strip() for addr in MAIL_USERNAME.split(",") if addr.strip()),
             "",
         )
+        if not self.from_addr:
+            self.from_addr = next(
+                (addr.strip() for addr in self.to_addr.split(",") if addr.strip()),
+                "",
+            )
+        self.from_name = MAIL_FROM_NAME
         self.password = MAIL_PASSWORD
         self.smtp_host = SMTP_HOST
         self.smtp_port = SMTP_PORT
@@ -137,13 +146,13 @@ Recovery record id: {rec.get('id')}
             n.error = "Set NOTIFY_TO to the receiving email address."
         elif not self.password:
             n.status = "SKIPPED"
-            n.error = "Set MAIL_PASSWORD to an app password for the receiving email account."
+            n.error = "Set MAIL_PASSWORD to an app password for the SMTP sender account."
         else:
             try:
                 recipients = [addr.strip() for addr in self.to_addr.split(",") if addr.strip()]
                 msg = MIMEText(body, "plain", "utf-8")
                 msg["Subject"] = n.subject
-                msg["From"] = self.from_addr
+                msg["From"] = formataddr((self.from_name, self.from_addr))
                 msg["To"] = ", ".join(recipients)
 
                 with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=10) as server:
@@ -155,7 +164,7 @@ Recovery record id: {rec.get('id')}
                 n.status = "FAILED"
                 n.error = (
                     "SMTP authentication failed. MAIL_PASSWORD must be an app "
-                    "password for the receiving email account."
+                    "password for the SMTP sender account."
                 )
             except Exception as e:
                 err_msg = str(e)
